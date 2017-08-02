@@ -6,11 +6,14 @@ class Tickets extends MY_Controller {
     public function index() {}
 
     public function get($id = null) {
-        echo json_encode([
-            'status' => false,
-            'response' => [],
-            'message' => 'get ' . $id
-        ]);
+        $where = ['account_id' => $this->userdata['account_id']];
+        
+        if($id) {
+            $where['id'] = $id;
+        }
+        
+        $this->response->status = true;
+        $this->response->response = $this->m_ticket->get([], $where, $id ? 1 : false);
     }
     
     public function create() {
