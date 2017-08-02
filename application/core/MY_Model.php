@@ -91,6 +91,11 @@ class MY_Model extends CI_Model {
      * mark a record as deleted in the database
      */
     public function delete($where = []) {
+        //should not run deleted query on already deleted records
+        if(!isset($where['deleted'])) {
+            $where['deleted'] = false;
+        }
+        
         $this->update([
             'deleted' => true
         ], $where);
