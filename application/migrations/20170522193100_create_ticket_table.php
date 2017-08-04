@@ -73,6 +73,8 @@ class Migration_Create_ticket_table extends CI_Migration {
             $this->dbforge->add_key('id', true);
             //create the table
             $this->dbforge->create_table(DB_TICKET);
+            
+            //ALTER TABLE `ticket` ADD FULLTEXT KEY `search` (`name`,`content`);
         }
 
         public function down() {

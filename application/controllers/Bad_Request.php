@@ -8,18 +8,14 @@ class Bad_Request extends MY_Controller {
     }
     
     public function request_not_valid() {
-        echo json_encode([
-            'status' => false,
-            'response' => [],
-            'message' => 'request_not_valid'
-        ]);
+        $this->response->status = false;
+        $this->response->response = [];
+        $this->response->message = 'request_not_valid';
     }
     
     public function not_found() {
-        echo json_encode([
-            'status' => false,
-            'response' => [],
-            'message' => 'not_found'
-        ]);
+        $this->response->status = false;
+        $this->response->response = [];
+        $this->response->message = 'not_found';
     }
 }

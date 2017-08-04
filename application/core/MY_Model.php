@@ -45,6 +45,13 @@ class MY_Model extends CI_Model {
             $where['deleted'] = false;
         }
         
+        //add the custom search filter
+        if(isset($where['search'])) {
+            $this->db->where($where['search']);
+            //remove the search key from the where clause
+            unset($where['search']);
+        }
+        
         //set the query conditions
         if(!empty($where)) {
             $this->db->where($where);

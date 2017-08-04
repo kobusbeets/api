@@ -4,6 +4,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 //api token expiry time
 defined('FUTURE_TOKEN_EXPIRY_DATE') OR define('FUTURE_TOKEN_EXPIRY_DATE', time() + (60*60*8));
 
+//ticket status list
+defined('TS_LIST') OR define('TS_LIST', ['open', 'inhand', 'onhold', 'closed']);
+defined('TS_DEFAULT') OR define('TS_DEFAULT', 'open');
+
+//ticket priority list
+defined('TP_LIST') OR define('TP_LIST', ['low', 'medium', 'high', 'sla']);
+defined('TP_DEFAULT') OR define('TP_DEFAULT', 'medium');
+
 //ticket status - might not be used
 defined('TS_OPEN') OR define('TS_OPEN', 1);
 defined('TS_INHAND') OR define('TS_INHAND', 2);
