@@ -64,7 +64,11 @@ $route['signin']['post'] = 'user/signin';
 //*/
 
 //*
-
+$route['email_accounts']['get'] = 'email_account/get';
+$route['email_accounts/(:num)']['get'] = 'email_account/get/$1';
+$route['email_accounts']['post'] = 'email_account/create';
+$route['email_accounts/(:num)']['put'] = 'email_account/update/$1';
+$route['email_accounts/(:num)']['delete'] = 'email_account/delete/$1';
 //*/
 
 

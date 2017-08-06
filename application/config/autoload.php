@@ -139,8 +139,8 @@ $autoload['model'] = [
     'user_account_control_model' => 'm_uac',
     'api_token_model' => 'm_api_token',
     'ticket_model' => 'm_ticket',
+    'email_account_model' => 'm_email_account',
     //'note_model' => 'm_note',
     //'task_model' => 'm_task',
-    //'email_account_model' => 'm_email_account',
     //'email_rule_model' => 'm_email_rule'
 ];

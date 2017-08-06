@@ -53,6 +53,11 @@ class Migration_Create_email_account_table extends CI_Migration {
                     'constraint' => 1,
                     'default' => false
                 ], 
+                'active' => [
+                    'type' => 'TINYINT',
+                    'constraint' => 1,
+                    'default' => true
+                ], 
                 'deleted' => [
                     'type' => 'TINYINT',
                     'constraint' => 1,

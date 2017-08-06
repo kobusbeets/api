@@ -29,12 +29,13 @@ defined('DB_ACCOUNT') OR define('DB_ACCOUNT', 'account');
 defined('DB_USER') OR define('DB_USER', 'user');
 defined('DB_USER_META') OR define('DB_USER_META', 'user_meta');
 defined('DB_USER_ACCOUNT_CONTROL') OR define('DB_USER_ACCOUNT_CONTROL', 'user_account_control');
-
 defined('DB_API_TOKEN') OR define('DB_API_TOKEN', 'api_token');
 defined('DB_TICKET') OR define('DB_TICKET', 'ticket');
+defined('DB_EMAIL_ACCOUNT') OR define('DB_EMAIL_ACCOUNT', 'email_account');
+
 defined('DB_NOTE') OR define('DB_NOTE', 'note');
 defined('DB_TASK') OR define('DB_TASK', 'task');
-defined('DB_EMAIL_ACCOUNT') OR define('DB_EMAIL_ACCOUNT', 'email_account');
+
 defined('DB_EMAIL_RULE') OR define('DB_EMAIL_RULE', 'email_rule');
 
 /*
