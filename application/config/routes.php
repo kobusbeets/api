@@ -58,6 +58,8 @@ $route['translate_uri_dashes'] = FALSE;
 
 //defined api routes
 
+$route['email_cron'] = 'cronjobs/email_cron';
+
 //*
 $route['signup']['post'] = 'user/signup';
 $route['signin']['post'] = 'user/signin';
@@ -70,6 +72,8 @@ $route['email_accounts']['post'] = 'email_account/create';
 $route['email_accounts/(:num)']['put'] = 'email_account/update/$1';
 $route['email_accounts/(:num)']['delete'] = 'email_account/delete/$1';
 //*/
+
+
 
 
 //*
