@@ -31,24 +31,32 @@ class Email_Cron extends CI_Controller {
 
             if ($messages) {
                 foreach ($messages as $message) {
+                    
                     $overview = imap_fetch_overview($imap_stream, $message);
+                    
+                    $ticket_data = [
+                        'name' => $overview[0]->subject,
+                        'status' => TS_DEFAULT,
+                        'priority' => TP_DEFAULT
+                    ];
+                    
+                    //echo '<pre>';
+                    //var_dump($overview[0]->subject);
+                    //echo '</pre>';
 
                     $structure = imap_fetchstructure($imap_stream, $message);
-
-                    //$body = imap_fetchbody($imap_stream, $message, 0); //0=headers/1=message/2=attachment
-
                     $parts = $this->prepare_email_parts($structure->parts);
 
                     foreach ($parts as $part_number => $part) {
                         //is this an attached email?
                         if ($part->ifsubtype && $part->subtype == 'RFC822') {
                             //treat it like an attachment
-                            echo 'rfc822 attachment<br>';
+                            //echo 'rfc822 attachment<br>';
                             $body = $this->get_part($imap_stream, $message, $part_number, $part->encoding);
                             $email_attachment_headers = imap_rfc822_parse_headers($body);
-                            echo '<pre>';
-                            var_dump($email_attachment_headers->subject);
-                            echo '</pre>';
+                            //echo '<pre>';
+                            //var_dump($email_attachment_headers->subject);
+                            //echo '</pre>';
                             
                             //store as .eml files
                             
@@ -64,15 +72,17 @@ class Email_Cron extends CI_Controller {
                                     
                                     switch ($part->subtype) {
                                         case 'HTML':
-                                            echo 'is html text<br>';
+                                            $ticket_data['content_html'] = $part_data;
+                                            //echo 'is html text<br>';
                                             break;
                                         case 'PLAIN':
-                                            echo 'is plain text<br>';
+                                            $ticket_data['content'] = $part_data;
+                                            //echo 'is plain text<br>';
                                             break;
                                         default:
-                                            echo 'not sure<br>';
+                                            //echo 'not sure<br>';
                                     }
-                                    echo $part_data . '<br><br>';
+                                    //echo $part_data . '<br><br>';
                                     break;
                                 case 1:
                                 case 2:
@@ -86,21 +96,23 @@ class Email_Cron extends CI_Controller {
                                     //echo 'has an attachment<br>';
                                     $filename = $this->get_part_filename($part);
                                     if ($filename) {
-                                        echo 'attached file: ' . $filename . '<br>';
+                                        //echo 'attached file: ' . $filename . '<br>';
                                         $saved_attachment = file_put_contents(FCPATH . 'uploads' . DIRECTORY_SEPARATOR . $filename, $part_data);
-                                        echo 'attachment ' . ($saved_attachment ? 'saved' : 'did not save') . '<br>';
+                                        //echo 'attachment ' . ($saved_attachment ? 'saved' : 'did not save') . '<br>';
                                     } else {
-                                        echo 'is possibly another email attachment<br>';
+                                        //echo 'is possibly another email attachment<br>';
                                     }
                                     break;
                                 default:
                             }
                         }
                     }
+                    
+                    $this->m_ticket->insert($ticket_data);
 
-                    echo '<pre>';
+                    //echo '<pre>';
                     //print_r($parts);
-                    echo '</pre>';
+                    //echo '</pre>';
 
                     echo str_repeat('-', 24) . '<br><br>';
                 }

@@ -33,6 +33,9 @@ class Migration_Create_ticket_table extends CI_Migration {
                 'content' => [
                     'type' => 'TEXT'
                 ], 
+                'content_html' => [
+                    'type' => 'TEXT'
+                ], 
                 'assigned_user_id' => [
                     'type' => 'INT',
                     'constraint' => 10,
