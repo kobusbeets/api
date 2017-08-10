@@ -26,6 +26,11 @@ class Migration_Create_email_table extends CI_Migration {
                     'constraint' => 10,
                     'unsigned' => true
                 ], 
+                'email_account_id' => [
+                    'type' => 'INT',
+                    'constraint' => 10,
+                    'unsigned' => true
+                ], 
                 'ticket_id' => [
                     'type' => 'INT',
                     'constraint' => 10,

@@ -34,6 +34,8 @@ class Email_Cron extends CI_Controller {
         //loop through email accounts and get their mail
         foreach ($email_accounts as $email_account) {
             echo 'popping mailbox ' . $email_account->username . '... <br>';
+            
+            $message_ids = $this->get_saved_message_ids($email_account->id);
 
             $imap_stream = imap_open('{' . $email_account->host . ':' . $email_account->imap_port . '/imap' . ($email_account->enable_ssl ? '/ssl/novalidate-cert' : '') . '}INBOX', $email_account->username, $email_account->password, OP_READONLY);
 
@@ -45,13 +47,41 @@ class Email_Cron extends CI_Controller {
                 if ($messages) {
                     //loop through emails and process their data
                     foreach ($messages as $message) {
+                        
+                        //fetch the email structure
+                        $structure = imap_fetchstructure($imap_stream, $message);
+                        
                         //get the headers for the current email
                         $headers = imap_fetchheader($imap_stream, $message);
                         //parse email headers
                         $parsed_headers = imap_rfc822_parse_headers($headers);
                         
+                        //skip messages that was already saved
+                        if(in_array($parsed_headers->message_id, $message_ids)) {
+                            echo 'message already saved...<br>';
+                            continue;
+                        }
+                        
+                        $ticket_id = null;
+                        //check if it's a response on an existing ticket
+                        preg_match("/\[TID:(\d+)\]/", $parsed_headers->subject, $ticket_id_data);
+                        if($ticket_id_data) {
+                            //does the ticket exist?
+                            $ticket = $this->m_ticket->get([], ['id' => $ticket_id_data[1]], 1);
+                            if($ticket) {
+                                echo 'existing ticket: #' . $ticket_id_data[1] . '...<br>';
+                                $ticket_id = $ticket_id_data[1];
+                            } else {
+                                echo 'creating a new ticket...<br>';
+                            }
+                        } else {
+                            echo 'creating a new ticket...<br>';
+                        }
+                        
+                        //create the email data array to store the incoming email
                         $email_data = [
                             'account_id' => $email_account->account_id,
+                            'email_account_id' => $email_account->id,
                             'message_id' => $parsed_headers->message_id,
                             'subject' => $parsed_headers->subject,
                             'from' => $parsed_headers->from[0]->mailbox . '@' . $parsed_headers->from[0]->host,
@@ -67,10 +97,9 @@ class Email_Cron extends CI_Controller {
                             'account_id' => $email_account->account_id
                         ];
                         
-                        //fetch the email structure
-                        $structure = imap_fetchstructure($imap_stream, $message);
                         //process all parts of the email
                         $parts = $this->prepare_email_parts($structure->parts);
+                        
                         //loop through each part and process the data for each
                         foreach ($parts as $part_number => $part) {
                             //get the part data
@@ -118,19 +147,27 @@ class Email_Cron extends CI_Controller {
                             }
                         }
 
-                        $ticket_id = $this->m_ticket->insert($ticket_data);
+                        //only create ticket if it doesn't already exist
+                        if(!$ticket_id) {
+                            $ticket_id = $this->m_ticket->insert($ticket_data);
+                        }
                         
+                        //link incoming email to the ticket
                         $email_data['ticket_id'] = $ticket_id;
-                        
-                        $this->m_email->insert($email_data);
+                        //create the email record
+                        $email_id = $this->m_email->insert($email_data);
 
                         echo str_repeat('-', 24) . '<br><br>';
                     }
+                } else {
+                    echo 'there are no messages to pop...<br>';
                 }
 
                 //close the imap connection
                 imap_close($imap_stream);
                 echo 'connection to mailbox closed...<br>';
+            } else {
+                echo 'unable to ping mailbox...<br>';
             }
         }
         
@@ -140,6 +177,20 @@ class Email_Cron extends CI_Controller {
         $end_time = time();
         
         echo ($end_time - $start_time) . ' second/s elapsed...<br>';
+    }
+    
+    //get saved message ids for today
+    private function get_saved_message_ids($email_account_id = null) {
+        //prepare message id array
+        $message_ids = [];
+        //get the message id's for today
+        $emails = $this->m_email->get(['message_id'], ['email_account_id' => $email_account_id, 'date_created >=' => strtotime('today')]);
+        foreach($emails as $email) {
+            if(!in_array($email->message_id, $message_ids)) {
+                $message_ids[] = $email->message_id;
+            }
+        }
+        return $message_ids;
     }
 
     //get all parts of the mail being popped and restructure it into an array
