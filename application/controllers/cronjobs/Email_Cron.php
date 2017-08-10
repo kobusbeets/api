@@ -17,6 +17,8 @@ class Email_Cron extends CI_Controller {
             exit;
         }
         
+        $start_time = time();
+        
         //prepare the attachments path
         $attachments_path = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . date('Y') . DIRECTORY_SEPARATOR . date('m') . DIRECTORY_SEPARATOR . date('d') . DIRECTORY_SEPARATOR;
         //if the attachment directory does not exist, create it.
@@ -44,22 +46,22 @@ class Email_Cron extends CI_Controller {
                     //loop through emails and process their data
                     foreach ($messages as $message) {
                         //get the headers for the current email
-                        //$overview = imap_fetch_overview($imap_stream, $message);
-                        
-                        $headers = imap_headerinfo($imap_stream, $message);
+                        $headers = imap_fetchheader($imap_stream, $message);
+                        //parse email headers
+                        $parsed_headers = imap_rfc822_parse_headers($headers);
                         
                         $email_data = [
                             'account_id' => $email_account->account_id,
-                            'message_id' => $headers->message_id,
-                            'subject' => $headers->subject,
-                            'from' => $headers->from[0]->mailbox . '@' . $headers->from[0]->host,
-                            'to' => $headers->to[0]->mailbox . '@' . $headers->to[0]->host,
-                            'headers' => imap_fetchheader($imap_stream, $message)
+                            'message_id' => $parsed_headers->message_id,
+                            'subject' => $parsed_headers->subject,
+                            'from' => $parsed_headers->from[0]->mailbox . '@' . $parsed_headers->from[0]->host,
+                            'to' => $parsed_headers->to[0]->mailbox . '@' . $parsed_headers->to[0]->host,
+                            'headers' => $headers
                         ];
                         
                         //create the ticket data array
                         $ticket_data = [
-                            'name' => $headers->subject,
+                            'name' => $parsed_headers->subject,
                             'status' => TS_DEFAULT,
                             'priority' => TP_DEFAULT,
                             'account_id' => $email_account->account_id
@@ -131,6 +133,13 @@ class Email_Cron extends CI_Controller {
                 echo 'connection to mailbox closed...<br>';
             }
         }
+        
+        echo 'end of popping mailboxes...<br>';
+        
+        
+        $end_time = time();
+        
+        echo ($end_time - $start_time) . ' second/s elapsed...<br>';
     }
 
     //get all parts of the mail being popped and restructure it into an array

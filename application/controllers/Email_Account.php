@@ -23,12 +23,12 @@ class Email_Account extends MY_Controller {
         $allowed_filter_keys = [
             'host', 'username', 'password', 'imap_port', 'smtp_port', 'enable_ssl', 'active'
         ];
-        
+
         //check if a single item is queried
         if($id) {
             $this->db_where['id'] = $id;
         }
-        
+
         //do not perform a search when a single item is being queried
         if(!$id && $this->input->get()) {
             foreach($allowed_filter_keys as $allowed_filter_key) {
@@ -48,7 +48,7 @@ class Email_Account extends MY_Controller {
                 }
             }
         }
-        
+
         $this->response->status = true;
         $this->response->response = $this->m_email_account->get([], $this->db_where, $id ? 1 : ($this->input->get('limit') ?? false), ($this->input->get('offset') ?? false));
     }
@@ -68,33 +68,33 @@ class Email_Account extends MY_Controller {
         $allowed_inputs = [
             'host' => true, 'username' => true, 'password' => true, 'imap_port' => true, 'smtp_port' => true, 'enable_ssl' => false, 'active' => false
         ];
-        
+
         $validation_failed = false;
-        
+
         foreach($allowed_inputs as $allowed_input=>$required) {
             //get the input value
             $input_value = $this->get_input($allowed_input);
-            
+
             //check input validation
             if($required && empty($input_value)) {
                 $this->response->message = $allowed_input . ' input is required';
                 $validation_failed = true;
                 break;
             }
-            
+
             //add input value to data array
             if($input_value !== null) {
                 $this->db_data[$allowed_input] = $input_value;
             }
         }
-        
+
         //if validation is successful, create the new ticket
         if(!$validation_failed) {
             //create a new ticket resource
             $id = $this->m_email_account->insert($this->db_data);
-            
+
             $this->db_where['id'] = $id;
-            
+
             $this->response->response = $this->m_email_account->get([], $this->db_where, 1);
             $this->response->message = 'new email account created';
         }
@@ -115,34 +115,34 @@ class Email_Account extends MY_Controller {
         $allowed_inputs = [
             'host' => true, 'username' => true, 'password' => true, 'imap_port' => true, 'smtp_port' => true, 'enable_ssl' => false, 'active' => false
         ];
-        
+
         $validation_failed = false;
-        
+
         foreach($allowed_inputs as $allowed_input=>$required) {
             //get the input value
             $input_value = $this->get_input($allowed_input);
-            
+
             //check input validation
             if($required && empty($input_value)) {
                 $this->response->message = $allowed_input . ' input is required';
                 $validation_failed = true;
                 break;
             }
-            
+
             //add input value to data array
             if($input_value !== null) {
                 $this->db_data[$allowed_input] = $input_value;
             }
         }
-        
+
         //if validation is successful, create the new ticket
         if(!$validation_failed) {
             //set the record id
             $this->db_where['id'] = $id;
-            
+
             //create a new ticket resource
             $this->m_email_account->update($this->db_data, $this->db_where);
-            
+
             $this->response->response = $this->m_email_account->get([], $this->db_where, 1);
             $this->response->message = 'ticket updated';
         }
