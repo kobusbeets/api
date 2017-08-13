@@ -141,6 +141,7 @@ $autoload['model'] = [
     'ticket_model' => 'm_ticket',
     'email_account_model' => 'm_email_account',
     'email_model' => 'm_email',
+    'email_attachment_model' => 'm_email_attachment',
     //'note_model' => 'm_note',
     //'task_model' => 'm_task',
     //'email_rule_model' => 'm_email_rule'

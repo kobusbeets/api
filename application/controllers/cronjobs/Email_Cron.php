@@ -3,10 +3,18 @@
 defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Email_Cron extends CI_Controller {
+    
+    private $attachment_path;
 
     public function __construct() {
         parent::__construct();
-
+        
+        $this->attachment_path = FCPATH . 'uploads' . DIRECTORY_SEPARATOR . date('Y') . DIRECTORY_SEPARATOR . date('m') . DIRECTORY_SEPARATOR . date('d') . DIRECTORY_SEPARATOR;
+        if(!is_dir($this->attachment_path)) {
+            //create the path
+            mkdir($this->attachment_path, 0777, true);
+        }
+        
         $this->load->config('email');
     }
 
@@ -47,10 +55,6 @@ class Email_Cron extends CI_Controller {
                 if ($messages) {
                     //loop through emails and process their data
                     foreach ($messages as $message) {
-                        
-                        //fetch the email structure
-                        $structure = imap_fetchstructure($imap_stream, $message);
-                        
                         //get the headers for the current email
                         $headers = imap_fetchheader($imap_stream, $message);
                         //parse email headers
@@ -62,21 +66,8 @@ class Email_Cron extends CI_Controller {
                             continue;
                         }
                         
-                        $ticket_id = null;
-                        //check if it's a response on an existing ticket
-                        preg_match("/\[TID:(\d+)\]/", $parsed_headers->subject, $ticket_id_data);
-                        if($ticket_id_data) {
-                            //does the ticket exist?
-                            $ticket = $this->m_ticket->get([], ['id' => $ticket_id_data[1]], 1);
-                            if($ticket) {
-                                echo 'existing ticket: #' . $ticket_id_data[1] . '...<br>';
-                                $ticket_id = $ticket_id_data[1];
-                            } else {
-                                echo 'creating a new ticket...<br>';
-                            }
-                        } else {
-                            echo 'creating a new ticket...<br>';
-                        }
+                        //get the ticket id if it exists in the subject
+                        $ticket_id = $this->get_ticket_id_from_subject($parsed_headers->subject);
                         
                         //create the email data array to store the incoming email
                         $email_data = [
@@ -89,6 +80,9 @@ class Email_Cron extends CI_Controller {
                             'headers' => $headers
                         ];
                         
+                        //create a variable to hold email attachment data
+                        $email_attachments = [];
+                        
                         //create the ticket data array
                         $ticket_data = [
                             'name' => $parsed_headers->subject,
@@ -96,6 +90,9 @@ class Email_Cron extends CI_Controller {
                             'priority' => TP_DEFAULT,
                             'account_id' => $email_account->account_id
                         ];
+                        
+                        //fetch the email structure
+                        $structure = imap_fetchstructure($imap_stream, $message);
                         
                         //process all parts of the email
                         $parts = $this->prepare_email_parts($structure->parts);
@@ -109,8 +106,7 @@ class Email_Cron extends CI_Controller {
                                 //get the headers for the attached email
                                 $email_attachment_headers = imap_rfc822_parse_headers($part_data);
                                 //save the attached email
-                                $saved_attachment = file_put_contents($attachments_path . $email_attachment_headers->subject . '.eml', $part_data);
-                                echo 'rfc822 attached email ' . ($saved_attachment ? 'saved' : 'did not save') . '...<br>';
+                                $email_attachments[] = $this->save_email_attachment($email_attachment_headers->subject . '.eml', $part_data);
                             } else {
                                 switch ($part->type) {
                                     case 0:
@@ -136,8 +132,7 @@ class Email_Cron extends CI_Controller {
                                         $filename = $this->get_part_filename($part);
                                         if ($filename) {
                                             //save the attachment
-                                            $saved_attachment = file_put_contents($attachments_path . $filename, $part_data);
-                                            echo 'attachment ' . $filename . ' ' . ($saved_attachment ? 'saved' : 'did not save') . '...<br>';
+                                            $email_attachments[] = $this->save_email_attachment($filename, $part_data);
                                         } else {
                                             // file name was not found, what is it?
                                         }
@@ -156,6 +151,22 @@ class Email_Cron extends CI_Controller {
                         $email_data['ticket_id'] = $ticket_id;
                         //create the email record
                         $email_id = $this->m_email->insert($email_data);
+                        
+                        //save attachment data in db
+                        foreach($email_attachments as $email_attachment) {
+                            if($email_attachment['filestat']) {
+                                $this->m_email_attachment->insert([
+                                    'account_id' => $email_account->account_id,
+                                    'email_id' => $email_id,
+                                    'name' => $email_attachment['filename'], 
+                                    'path' => $email_attachment['filepath'], 
+                                    'url' => $email_attachment['filelink']
+                                ]);
+                            }
+                        }
+                        echo '<pre>';
+                        print_r($email_attachments);
+                        echo '</pre>';
 
                         echo str_repeat('-', 24) . '<br><br>';
                     }
@@ -173,10 +184,47 @@ class Email_Cron extends CI_Controller {
         
         echo 'end of popping mailboxes...<br>';
         
-        
         $end_time = time();
         
         echo ($end_time - $start_time) . ' second/s elapsed...<br>';
+    }
+    
+    /*
+     * get the ticket id from the subject
+     * params:
+     * * subject - the subject of the email
+     */
+    public function get_ticket_id_from_subject($subject) {
+        $ticket_id = null;
+        //parse the subejct
+        preg_match("/\[TID:(\d+)\]/", $subject, $subject_data);
+        if($subject_data) {
+            //does the ticket exist?
+            $ticket = $this->m_ticket->get([], ['id' => $subject_data[1]], 1);
+            if($ticket) {
+                $ticket_id = $subject_data[1];
+            }
+        } 
+        //return the ticket id
+        return $ticket_id;
+    }
+    
+    /*
+     * save email attachment to a file. 
+     * params:
+     * * filename - the name of the file to be saved
+     * * data - the data that should be written to a file
+     */
+    public function save_email_attachment($filename, $data) {
+        //save attachment to a file
+        $attachment = file_put_contents($this->attachment_path . $filename, $data);
+        //return attachment data
+        return [
+            'filepath' => $this->attachment_path . $filename,
+            'filename' => $filename,
+            'filelink' => base_url('uploads/' . date('Y') . '/' . date('m') . '/' . date('d') . '/' . $filename),
+            'filestat' => $attachment ? true : false
+        ];
     }
     
     //get saved message ids for today

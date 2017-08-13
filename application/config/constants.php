@@ -33,6 +33,7 @@ defined('DB_API_TOKEN') OR define('DB_API_TOKEN', 'api_token');
 defined('DB_TICKET') OR define('DB_TICKET', 'ticket');
 defined('DB_EMAIL_ACCOUNT') OR define('DB_EMAIL_ACCOUNT', 'email_account');
 defined('DB_EMAIL') OR define('DB_EMAIL', 'email');
+defined('DB_EMAIL_ATTACHMENT') OR define('DB_EMAIL_ATTACHMENT', 'email_attachment');
 
 defined('DB_NOTE') OR define('DB_NOTE', 'note');
 defined('DB_TASK') OR define('DB_TASK', 'task');
