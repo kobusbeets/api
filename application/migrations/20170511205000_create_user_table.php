@@ -9,6 +9,8 @@ defined('BASEPATH') OR exit('No direct script access allowed');
  * null = true 
  * auto_increment = true 
  * unique = true 
+ * 
+ * the account_id field is where the user originated from and does have nothing todo with and linked accounts
  */
 
 class Migration_Create_user_table extends CI_Migration {
@@ -21,6 +23,12 @@ class Migration_Create_user_table extends CI_Migration {
                     'unsigned' => true,
                     'auto_increment' => true
                 ], 
+                'account_id' => [
+                    'type' => 'INT',
+                    'constraint' => 10,
+                    'unsigned' => true,
+                    'default'=> 0
+                ],
                 'is_admin' => [
                     'type' => 'TINYINT',
                     'constraint' => 1,

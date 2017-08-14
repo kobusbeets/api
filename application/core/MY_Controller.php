@@ -28,7 +28,7 @@ class MY_Controller extends CI_Controller {
         $this->userdata = [
             'is_authenticated' => false
         ];
-
+        
         //create the response object structure
         $this->response = new stdClass();
         $this->response->status = false;
@@ -38,7 +38,7 @@ class MY_Controller extends CI_Controller {
         //initialize the where array object
         $this->db_where = [];
         $this->db_data = [];
-
+        
         //$this->output->enable_profiler(TRUE);
         //skip routes that does not require authentication
         if (!(in_array(strtolower($this->router->class), ['user', 'bad_request']) && in_array(strtolower($this->router->method), ['signup', 'request_not_valid']))) {
@@ -48,7 +48,7 @@ class MY_Controller extends CI_Controller {
 
     //a method to help with getting request inputs
     public function get_input($key = null) {
-        return $key && isset($this->request_input->$key) ? $this->request_input->$key : null;
+        return $key && isset($this->request_input->$key) ? $this->request_input->$key : '';
     }
 
     //perform user authentication
@@ -151,10 +151,25 @@ class MY_Controller extends CI_Controller {
     }
 
     //make sure the user is authenticated before making any api function calls
+    //refactor the code in the _remap function.
     public function _remap($method, $params = array()) {
-        if($this->userdata['is_authenticated']) {
+        //a flag to call a function
+        $call_user_function = false;
+        if (!(in_array(strtolower($this->router->class), ['user', 'bad_request']) && in_array(strtolower($this->router->method), ['signup', 'request_not_valid']))) {
+            if($this->userdata['is_authenticated']) {
+                $call_user_function = true;
+            } else {
+                $this->response->message = 'not authenticated';
+            }
+        } else {
+            $call_user_function = true;
+        }
+        
+        if($call_user_function) {
             if (method_exists($this, $method)) {
                 return call_user_func_array(array($this, $method), $params);
+            } else {
+                $this->response->message = 'could not route your request';
             }
         }
     }

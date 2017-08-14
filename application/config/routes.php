@@ -73,7 +73,13 @@ $route['email_accounts/(:num)']['put'] = 'email_account/update/$1';
 $route['email_accounts/(:num)']['delete'] = 'email_account/delete/$1';
 //*/
 
-
+//*
+$route['users']['get'] = 'user/get';
+$route['users/(:num)']['get'] = 'user/get/$1';
+$route['users']['post'] = 'user/create';
+$route['users/(:num)']['put'] = 'user/update/$1';
+$route['users/(:num)']['delete'] = 'user/delete/$1';
+//*/
 
 
 //*

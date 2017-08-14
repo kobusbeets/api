@@ -43,10 +43,13 @@ class Email_Cron extends CI_Controller {
         foreach ($email_accounts as $email_account) {
             echo 'popping mailbox ' . $email_account->username . '... <br>';
             
+            //get saved email message ids from the database for the last day
             $message_ids = $this->get_saved_message_ids($email_account->id);
 
+            //open the imap stream to the mailbox
             $imap_stream = imap_open('{' . $email_account->host . ':' . $email_account->imap_port . '/imap' . ($email_account->enable_ssl ? '/ssl/novalidate-cert' : '') . '}INBOX', $email_account->username, $email_account->password, OP_READONLY);
 
+            //check if the stream is open or not
             if (imap_ping($imap_stream)) {
                 echo 'connection to mailbox is open. starting to retrieve messages... <br>';
                 //get emails only from today
@@ -70,6 +73,8 @@ class Email_Cron extends CI_Controller {
                         $ticket_id = $this->get_ticket_id_from_subject($parsed_headers->subject);
                         
                         //create the email data array to store the incoming email
+                        //the email_account_id is used to retrieve unique email message ids for each account
+                        //see get saved email ids above
                         $email_data = [
                             'account_id' => $email_account->account_id,
                             'email_account_id' => $email_account->id,
@@ -83,12 +88,12 @@ class Email_Cron extends CI_Controller {
                         //create a variable to hold email attachment data
                         $email_attachments = [];
                         
-                        //create the ticket data array
+                        //create the ticket data array for new tickets
                         $ticket_data = [
+                            'account_id' => $email_account->account_id,
                             'name' => $parsed_headers->subject,
                             'status' => TS_DEFAULT,
                             'priority' => TP_DEFAULT,
-                            'account_id' => $email_account->account_id
                         ];
                         
                         //fetch the email structure
@@ -194,7 +199,7 @@ class Email_Cron extends CI_Controller {
      * params:
      * * subject - the subject of the email
      */
-    public function get_ticket_id_from_subject($subject) {
+    private function get_ticket_id_from_subject($subject) {
         $ticket_id = null;
         //parse the subejct
         preg_match("/\[TID:(\d+)\]/", $subject, $subject_data);
@@ -215,7 +220,7 @@ class Email_Cron extends CI_Controller {
      * * filename - the name of the file to be saved
      * * data - the data that should be written to a file
      */
-    public function save_email_attachment($filename, $data) {
+    private function save_email_attachment($filename, $data) {
         //save attachment to a file
         $attachment = file_put_contents($this->attachment_path . $filename, $data);
         //return attachment data
