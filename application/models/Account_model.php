@@ -12,8 +12,8 @@ class Account_model extends MY_Model {
         return parent::insert($data);
     }
     
-    public function get($fields = array(), $where = array(), $limit = false, $offset = false) {
-        return parent::get($fields, $where, $limit, $offset);
+    public function get($fields = array(), $where = array(), $limit = false, $offset = false, $return_single = true) {
+        return parent::get($fields, $where, $limit, $offset, $return_single);
     }
     
     public function update($data = array(), $where = array(), $limit = false) {
@@ -26,21 +26,27 @@ class Account_model extends MY_Model {
     
     /*
      * update the user account access. If a record does not exist, a new one is created.
+     * params:
+     * * user_id - the user's unique id in the database
+     * * account_id - the account the user should have access to
+     * * permissions - the commaseparated list of user permissions
+     * * is_default_account - whether this should be the default account or not
      */
-    public function update_user_account_access($account_id, $user_id, $is_default_account = false, $uac = UAC_3) {
+    public function update_user_account_control($user_id, $account_id, $permissions = '', $is_default_account = false) {
+        echo "UID: $user_id | AID: $account_id | PERMS: $permissions | DA: $is_default_account<br>";
         
-        $user_account_access = $this->uac->get([], ['account_id' => $account_id, 'user_id' => $user_id]);
-        if($user_account_access) {
-            $this->uac->update(['uac' => $uac], ['account_id' => $account_id, 'user_id' => $user_id]);
+        $user_account_control = $this->m_uac->get([], ['user_id' => $user_id, 'account_id' => $account_id]);
+        if($user_account_control) {
+            $this->m_uac->update(['permissions' => $permissions], ['user_id' => $user_id, 'account_id' => $account_id]);
         } else {
-            $this->uac->insert(['account_id' => $account_id, 'user_id' => $user_id, 'uac' => $uac]);
+            $this->m_uac->insert(['user_id' => $user_id, 'account_id' => $account_id, 'permissions' => $permissions]);
         }
         
         if($is_default_account) {
             //make all other accounts non-default
-            $this->uac->update(['default_account' => !$is_default_account], ['user_id' => $user_id]);
+            $this->m_uac->update(['default_account' => !$is_default_account], ['user_id' => $user_id]);
             //set this account to be the default
-            $this->uac->update(['default_account' => $is_default_account], ['account_id' => $account_id, 'user_id' => $user_id]);
+            $this->m_uac->update(['default_account' => $is_default_account], ['user_id' => $user_id, 'account_id' => $account_id]);
         }
     }
 }

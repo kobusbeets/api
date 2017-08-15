@@ -12,11 +12,8 @@ class Email_attachment_model extends MY_Model {
         return parent::insert($data);
     }
     
-    public function get($fields = array(), $where = array(), $limit = false, $offset = false) {
-        
-        //$this->db->order_by('id', 'desc');
-        
-        return parent::get($fields, $where, $limit, $offset);
+    public function get($fields = array(), $where = array(), $limit = false, $offset = false, $return_single = false) {
+        return parent::get($fields, $where, $limit, $offset, $return_single);
     }
     
     public function update($data = array(), $where = array(), $limit = false) {

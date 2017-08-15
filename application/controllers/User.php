@@ -77,41 +77,39 @@ class User extends MY_Controller {
         } else {
             
             //does the user exist? only create a uac record if so ;)
-            
-            $account_id = $this->m_account->insert(['name' => $username]);
-            
-            //create a new user
-            $user_id = $this->m_user->insert([
-                'username' => $username,
-                'password' => $password,
-                'account_id' => $account_id
-            ]);
+            $user_query = $this->m_user->get(['id'], ['username' => $username], 1, 0, true);
+            if($user_query) {
+                $user_id = $user_query->id;
+                
+                $this->response->message = 'user is now linked to account';
+            } else {
+                $account_id = $this->m_account->insert(['name' => $username]);
 
-            //save the user meta info
-            $this->m_user_meta->insert([
-                'user_id' => $user_id,
-                'email' => $email,
-                'email_code' => md5($user_id),
-                'mobile' => $mobile,
-                'firstname' => $firstname,
-                'lastname' => $lastname
-            ]);
+                //create a new user
+                $user_id = $this->m_user->insert([
+                    'username' => $username,
+                    'password' => $password,
+                    'account_id' => $account_id
+                ]);
 
-            //link the user to the new account
-            $this->m_uac->insert([
-                'user_id' => $user_id,
-                'account_id' => $account_id,
-                'default_account' => false,
-                'permissions' => 'fullaccess'
-            ]);
+                //save the user meta info
+                $this->m_user_meta->insert([
+                    'user_id' => $user_id,
+                    'email' => $email,
+                    'email_code' => md5($user_id),
+                    'mobile' => $mobile,
+                    'firstname' => $firstname,
+                    'lastname' => $lastname
+                ]);
+
+                //link the user to the new account
+                $this->m_account->update_user_account_control($user_id, $account_id, 'fullaccess', true);
+                
+                $this->response->message = 'new user account created';
+            }
             
-            //link the newly created user to this account also
-            $this->m_uac->insert([
-                'user_id' => $user_id,
-                'account_id' => $this->userdata['account_id'],
-                'default_account' => true,
-                'permissions' => 'selected_permissions'
-            ]);
+            //link the user to this account without changing that user's default account
+            $this->m_account->update_user_account_control($user_id, $this->userdata['account_id'], 'selected_permissions');
         }
     }
     

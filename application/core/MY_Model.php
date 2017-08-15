@@ -34,7 +34,7 @@ class MY_Model extends CI_Model {
     /*
      * get records from the database
      */
-    public function get($fields = [], $where = [], $limit = false, $offset = false) {
+    public function get($fields = [], $where = [], $limit = false, $offset = false, $return_single = false) {
         //set the selected fields
         if(!empty($fields)) {
             $this->db->select(implode(', ', $fields));
@@ -66,7 +66,7 @@ class MY_Model extends CI_Model {
         $query = $this->db->get($this->table);
         
         //return the results
-        return $query->result();
+        return $return_single && $query->num_rows() == 1 ? $query->row() : $query->result();
     }
     
     /*
