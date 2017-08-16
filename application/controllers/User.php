@@ -121,56 +121,73 @@ class User extends MY_Controller {
      * - read
      */
     public function update($id = null) {
-        //define allowed inputs and if it's required or not
-        $allowed_inputs = [
-            'status' => false, 'priority' => false, 'assigned_user_id' => false, 'read' => false
-        ];
+        //get input fields
+        $username = $this->get_input('username');
+        $password = $this->get_input('password');
+        $email = $this->get_input('email');
+        $mobile = $this->get_input('mobile');
+        $firstname = $this->get_input('firstname');
+        $lastname = $this->get_input('lastname');
+        $permissions = $this->get_input('permissions');
         
-        $validation_failed = false;
-        
-        foreach($allowed_inputs as $allowed_input=>$required) {
-            //get the input value
-            $input_value = $this->get_input($allowed_input);
+        //run validation rules
+        if($username !== null && empty($username)) {
+            $this->response->message = 'username input is required';
+        } elseif($password !== null && empty($password)) {
+            $this->response->message = 'password input is required';
+        } //additional rules: valid email address, valid mobile number
+        else {
+            //check if username is unique, could be a validation rule
             
-            //check input validation
-            if($required && empty($input_value)) {
-                $this->response->message = $allowed_input . ' input is required';
-                $validation_failed = true;
-                break;
+            //prepare the user data
+            $db_user_data = []; 
+            if($username !== null) 
+                $db_user_data['username'] = $username;
+            if($password !== null) 
+                $db_user_data['password'] = encrypt_password($password);
+            
+            //update the user account if there are anything to update
+            if(!empty($db_user_data)) {
+                $db_user_where = [
+                    'id' => $id
+                ];
+                $this->m_user->update($db_user_data, $db_user_where);
             }
             
-            //add input value to data array
-            if($input_value !== null) {
-                //make sure the status is in the allowed list of statuses
-                if($allowed_input == 'status' && !in_array($input_value, TS_LIST))
-                    $input_value = TS_DEFAULT;
-                
-                //make sure priority is in the list of allowed priorities
-                if($allowed_input == 'priority' && !in_array($input_value, TP_LIST))
-                    $input_value = TP_DEFAULT;
-                
-                $this->db_data[$allowed_input] = $input_value;
+            //prepare the user meta data
+            $db_user_meta_data = []; 
+            if($email !== null) 
+                $db_user_meta_data['email'] = $email;
+            if($mobile !== null) 
+                $db_user_meta_data['mobile'] = $mobile;
+            if($firstname !== null) 
+                $db_user_meta_data['firstname'] = $firstname;
+            if($lastname !== null) 
+                $db_user_meta_data['lastname'] = $lastname;
+            
+            //update the user meta if there are anything to update
+            if(!empty($db_user_meta_data)) {
+                $db_user_meta_where = [
+                    'user_id' => $id
+                ];
+                $this->m_user_meta->update($db_user_meta_data, $db_user_meta_where);
             }
-        }
-        
-        //if no status is passed, set the default status
-        if(!isset($this->db_data['status']))
-            $this->db_data['status'] = TS_DEFAULT;
-        
-        //if no priority is passed, set the default priority
-        if(!isset($this->db_data['priority']))
-            $this->db_data['priority'] = TP_DEFAULT;
-        
-        //if validation is successful, create the new ticket
-        if(!$validation_failed) {
-            //set the record id
-            $this->db_where['id'] = $id;
             
-            //create a new ticket resource
-            $this->m_ticket->update($this->db_data, $this->db_where);
+            //did the request supply user permissions?
+            if($permissions !== null) {
+                //validate permissions against system permissions
+                $validate_permissions = explode(',', $permissions);
+                foreach($validate_permissions as $i=>$permission) {
+                    if(!in_array($permission, SYSTEM_PERMISSIONS)) {
+                        unset($validate_permissions[$i]);
+                    }
+                }
+                
+                //update user permissions
+                $this->m_account->update_user_account_control($id, $this->userdata['account_id'], implode(',', $validate_permissions));
+            }
             
-            $this->response->response = $this->m_ticket->get([], $this->db_where, 1);
-            $this->response->message = 'ticket updated';
+            $this->response->message = 'user updated';
         }
     }
     

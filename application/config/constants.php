@@ -4,6 +4,14 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 //api token expiry time
 defined('FUTURE_TOKEN_EXPIRY_DATE') OR define('FUTURE_TOKEN_EXPIRY_DATE', time() + (60*60*8));
 
+//define system permissions
+defined('SYSTEM_PERMISSIONS') OR define('SYSTEM_PERMISSIONS', [
+    'fullaccess', 
+    'can_create_user', 'can_update_user', 'can_remove_user',
+    'can_create_ticket', 'can_update_ticket',
+    'can_create_task', 'can_update_task', 'can_remove_task'
+]);
+
 //ticket status list
 defined('TS_LIST') OR define('TS_LIST', ['open', 'inhand', 'onhold', 'closed']);
 defined('TS_DEFAULT') OR define('TS_DEFAULT', 'open');

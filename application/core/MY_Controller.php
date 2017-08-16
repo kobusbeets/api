@@ -48,7 +48,7 @@ class MY_Controller extends CI_Controller {
 
     //a method to help with getting request inputs
     public function get_input($key = null) {
-        return $key && isset($this->request_input->$key) ? $this->request_input->$key : '';
+        return $key && isset($this->request_input->$key) ? $this->request_input->$key : null;
     }
 
     //perform user authentication
