@@ -134,6 +134,7 @@ $autoload['language'] = array();
 */
 $autoload['model'] = [
     'account_model' => 'm_account',
+    'account_subscription_model' => 'm_account_subscription',
     'user_model' => 'm_user',
     'user_meta_model' => 'm_user_meta',
     'user_account_control_model' => 'm_uac',

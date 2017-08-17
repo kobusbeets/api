@@ -68,49 +68,99 @@ class User extends MY_Controller {
         $mobile = $this->get_input('mobile');
         $firstname = $this->get_input('firstname');
         $lastname = $this->get_input('lastname');
+        $permissions = $this->get_input('permissions');
         
         //see if required fields are filled in
-        if(empty($username)) {
+        if(!$username) {
             $this->response->message = 'username input is required';
-        } elseif(empty($password)) {
+        } elseif(!$password) {
             $this->response->message = 'password input is required';
+        } elseif(!$email) {
+            $this->response->message = 'email address is required';
+        } elseif(!valid_email($email)) {
+            $this->response->message = 'invalid email address';
         } else {
+            //get the account user limit
+            $account_subscription = $this->m_account_subscription->get(['user_limit'], ['account_id' => $this->userdata['account_id']], 1, false, true);
             
-            //does the user exist? only create a uac record if so ;)
-            $user_query = $this->m_user->get(['id'], ['username' => $username], 1, 0, true);
-            if($user_query) {
-                $user_id = $user_query->id;
-                
-                $this->response->message = 'user is now linked to account';
+            //count the current linked users
+            $counted = $this->m_uac->count(['account_id' => $this->userdata['account_id']]);
+            
+            if($counted < $account_subscription->user_limit) {
+            
+                //does the user exist? only create a uac record if so ;)
+                $user_query = $this->m_user->get(['id'], ['username' => $username], 1, 0, true);
+                if($user_query) {
+                    $user_id = $user_query->id;
+
+                    $this->response->message = 'user is now linked to account';
+                } else {
+
+                    $user_id = $this->create_new_user([
+                        'username' => $username,
+                        'password' => $password,
+                        'email' => $email,
+                        'mobile' => $mobile,
+                        'firstname' => $firstname,
+                        'lastname' => $lastname,
+                    ]);
+
+                    $this->response->message = 'new user account created';
+                }
+
+                //did the request supply user permissions?
+                if($permissions) {
+                    //validate permissions against system permissions
+                    $validate_permissions = explode(',', $permissions);
+                    foreach($validate_permissions as $i=>$permission) {
+                        if(!in_array($permission, SYSTEM_PERMISSIONS)) {
+                            unset($validate_permissions[$i]);
+                        }
+                    }
+
+                    //update user permissions
+                    $this->m_account->update_user_account_control($user_id, $this->userdata['account_id'], implode(',', $validate_permissions));
+                }
             } else {
-                $account_id = $this->m_account->insert(['name' => $username]);
-
-                //create a new user
-                $user_id = $this->m_user->insert([
-                    'username' => $username,
-                    'password' => $password,
-                    'account_id' => $account_id
-                ]);
-
-                //save the user meta info
-                $this->m_user_meta->insert([
-                    'user_id' => $user_id,
-                    'email' => $email,
-                    'email_code' => md5($user_id),
-                    'mobile' => $mobile,
-                    'firstname' => $firstname,
-                    'lastname' => $lastname
-                ]);
-
-                //link the user to the new account
-                $this->m_account->update_user_account_control($user_id, $account_id, 'fullaccess', true);
-                
-                $this->response->message = 'new user account created';
+                $this->response->message = 'you have reached your user subscription limits. you need to buy more user subscriptions to add more users';
             }
             
-            //link the user to this account without changing that user's default account
-            $this->m_account->update_user_account_control($user_id, $this->userdata['account_id'], 'selected_permissions');
         }
+    }
+    
+    /*
+     * create a new user account and send an activation email
+     */
+    private function create_new_user($data = []) {
+        $account_id = $this->m_account->insert(['name' => $data['username']]);
+
+        //add account subscription
+        $this->m_account_subscription->insert(['account_id' => $account_id, 'date_expiry' => strtotime('next month')]);
+
+        //create a new user
+        $user_id = $this->m_user->insert([
+            'username' => $data['username'],
+            'password' => $data['password'],
+            'account_id' => $account_id
+        ]);
+
+        //save the user meta info
+        $this->m_user_meta->insert([
+            'user_id' => $user_id,
+            'email' => $data['email'],
+            'email_code' => md5($user_id),
+            'mobile' => $data['mobile'] ?? '',
+            'firstname' => $data['firstname'] ?? '',
+            'lastname' => $data['lastname'] ?? ''
+        ]);
+
+        //link the user to the new account
+        $this->m_account->update_user_account_control($user_id, $account_id, 'fullaccess', true);
+
+        //send the activation email 
+        //send_email($email_address, "activation email", 'the message');
+
+        return $user_id;
     }
     
     /*
@@ -203,62 +253,71 @@ class User extends MY_Controller {
      */
     public function delete($id = null) {
         $this->db_where['id'] = $id;
-        $affected_records = $this->m_ticket->delete($this->db_where);
+        $affected_records = $this->m_user->delete($this->db_where);
         if($affected_records) {
-            $this->response->message = $affected_records . ' ticket/s deleted';
+            $this->response->message = $affected_records . ' user/s deleted';
         } else {
             $this->response->message = 'nothing was deleted';
         }
     }
     
+    /*
+     * This method creates a new user account.
+     */
     public function signup() {
         //get input data
-        $username = $this->get_input('Username');
-        $password = $this->get_input('Password');
-        $email_address = $this->get_input('EmailAddress');
-        $firstname = $this->get_input('Firstname');
-        $lastname = $this->get_input('Lastname');
+        $username = $this->get_input('username');
+        $password = $this->get_input('password');
+        $email = $this->get_input('email');
+        $mobile = $this->get_input('mobile');
+        $firstname = $this->get_input('firstname');
+        $lastname = $this->get_input('lastname');
         //validate the request input
         if(!$username) {
-            $this->response->message = 'Username is required';
+            $this->response->message = 'username is required';
         } elseif(!$password) {
-            $this->response->message = 'Password is required';
-        } elseif(!$email_address) {
-            $this->response->message = 'Email address is required';
-        } elseif(!valid_email($email_address)) {
-            $this->response->message = 'Invalid email address';
+            $this->response->message = 'password is required';
+        } elseif(!$email) {
+            $this->response->message = 'email address is required';
+        } elseif(!valid_email($email)) {
+            $this->response->message = 'invalid email address';
         } else {
             //check if the username is available
             $user = $this->m_user->get(['id'], ['username' => $username], 1);
             if($user) {
-                $this->response->message = 'Username is already taken';
+                $this->response->message = 'username is already taken';
             } else {
-                //create a new account
-                $account_id = $this->m_account->insert(['name' => $username]);
                 
-                //create a new user
-                $user_id = $this->m_user->insert([
+                $this->create_new_user([
                     'username' => $username,
                     'password' => $password,
-                    'account_id' => $account_id
-                ]);
-                
-                //save the user meta info
-                $this->m_user_meta->insert([
-                    'user_id' => $user_id,
-                    'email' => $email_address,
-                    'email_code' => md5($user_id),
+                    'email' => $email,
+                    'mobile' => $mobile,
                     'firstname' => $firstname,
-                    'lastname' => $lastname
+                    'lastname' => $lastname,
                 ]);
                 
-                //link the user to the new account
-                $this->m_uac->insert([
-                    'user_id' => $user_id,
-                    'account_id' => $account_id,
-                    'default_account' => true,
-                    'permissions' => 'fullaccess'
-                ]);
+//                //create a new account
+//                $account_id = $this->m_account->insert(['name' => $username]);
+//                
+//                //create a new user
+//                $user_id = $this->m_user->insert([
+//                    'username' => $username,
+//                    'password' => $password,
+//                    'account_id' => $account_id
+//                ]);
+//                
+//                //save the user meta info
+//                $this->m_user_meta->insert([
+//                    'user_id' => $user_id,
+//                    'email' => $email_address,
+//                    'email_code' => md5($user_id),
+//                    'firstname' => $firstname ?? '',
+//                    'lastname' => $lastname ?? ''
+//                ]);
+//                
+//                //link the user to the new account
+//                $this->m_account->update_user_account_control($user_id, $account_id, 'fullaccess', true);
                 
                 //send the activation email 
                 //send_email($email_address, "activation email", 'the message');
@@ -270,6 +329,9 @@ class User extends MY_Controller {
         }
     }
     
+    /*
+     * This method signs a user in and sends a auth token as a response.
+     */
     public function signin() {
         //check if user is authenticated
         if($this->userdata['is_authenticated']) {

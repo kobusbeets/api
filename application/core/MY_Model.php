@@ -108,4 +108,12 @@ class MY_Model extends CI_Model {
         ], $where);
         return $this->db->affected_rows();
     }
+    
+    public function count($where = []) {
+        if(!isset($where['deleted'])) {
+            $where['deleted'] = false;
+        }
+        
+        return $this->db->count_all_results(DB_USER);
+    }
 }

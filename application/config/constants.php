@@ -34,6 +34,7 @@ defined('TP_SLA') OR define('TP_SLA', 4);
 
 //database tables
 defined('DB_ACCOUNT') OR define('DB_ACCOUNT', 'account');
+defined('DB_ACCOUNT_SUBSCRIPTION') OR define('DB_ACCOUNT_SUBSCRIPTION', 'account_subscription');
 defined('DB_USER') OR define('DB_USER', 'user');
 defined('DB_USER_META') OR define('DB_USER_META', 'user_meta');
 defined('DB_USER_ACCOUNT_CONTROL') OR define('DB_USER_ACCOUNT_CONTROL', 'user_account_control');

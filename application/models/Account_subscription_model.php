@@ -1,18 +1,18 @@
 <?php defined('BASEPATH') OR exit('No direct script access allowed');
 
-class User_account_control_model extends MY_Model {
+class Account_subscription_model extends MY_Model {
     
     public function __construct() {
         parent::__construct();
         
-        $this->table = DB_USER_ACCOUNT_CONTROL;
+        $this->table = DB_ACCOUNT_SUBSCRIPTION;
     }
     
     public function insert($data = []) {
         return parent::insert($data);
     }
     
-    public function get($fields = array(), $where = array(), $limit = false, $offset = false, $return_single = false) {
+    public function get($fields = array(), $where = array(), $limit = false, $offset = false, $return_single = true) {
         return parent::get($fields, $where, $limit, $offset, $return_single);
     }
     
@@ -22,9 +22,5 @@ class User_account_control_model extends MY_Model {
     
     public function delete($where = array()) {
         return parent::delete($where);
-    }
-    
-    public function count($where = []) {
-        return parent::count($where);
     }
 }

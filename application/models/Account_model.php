@@ -33,8 +33,6 @@ class Account_model extends MY_Model {
      * * is_default_account - whether this should be the default account or not
      */
     public function update_user_account_control($user_id, $account_id, $permissions = '', $is_default_account = false) {
-        echo "UID: $user_id | AID: $account_id | PERMS: $permissions | DA: $is_default_account<br>";
-        
         $user_account_control = $this->m_uac->get([], ['user_id' => $user_id, 'account_id' => $account_id]);
         if($user_account_control) {
             $this->m_uac->update(['permissions' => $permissions], ['user_id' => $user_id, 'account_id' => $account_id]);
