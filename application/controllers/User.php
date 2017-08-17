@@ -136,6 +136,12 @@ class User extends MY_Controller {
         } elseif($password !== null && empty($password)) {
             $this->response->message = 'password input is required';
         } //additional rules: valid email address, valid mobile number
+        elseif($email !== null && !valid_email($email)) {
+            $this->response->message = 'the provided email address is not valid';
+        }
+        elseif($username !== null && $this->m_user->get(['id'], ['username' => $username], 1)) {
+            $this->response->message = 'username is already taken, try another';
+        }
         else {
             //check if username is unique, could be a validation rule
             
