@@ -83,11 +83,11 @@ $route['users/(:num)']['delete'] = 'user/delete/$1';
 
 
 //*
-$route['tickets']['get'] = 'tickets/get';
-$route['tickets/(:num)']['get'] = 'tickets/get/$1';
-$route['tickets']['post'] = 'tickets/create';
-$route['tickets/(:num)']['put'] = 'tickets/update/$1';
-$route['tickets/(:num)']['delete'] = 'tickets/delete/$1';
+$route['tickets']['get'] = 'ticket/get';
+$route['tickets/(:num)']['get'] = 'ticket/get/$1';
+$route['tickets']['post'] = 'ticket/create';
+$route['tickets/(:num)']['put'] = 'ticket/update/$1';
+$route['tickets/(:num)']['delete'] = 'ticket/delete/$1';
 //*/
 
 //catch all other routes and send a bad request response
